@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	boostTypes "github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/mev-boost/server"
+	"github.com/google/uuid"
 )
 
 var ErrValidatorNotFound = errors.New("validator not found")
@@ -173,7 +174,8 @@ func (r *RemoteRelay) SubmitBlockCapella(msg *capella.SubmitBlockRequest, _ Vali
 }
 
 func (r *RemoteRelay) SubmitBlockPrimev(msg *capella.SubmitBlockRequest) error {
-	log.Info("submitting block to primev module", "endpoint", r.primevEndpoint, "primevToken", r.primevToken)
+	correlationID := uuid.New()
+	log.Info("submitting block to primev module", "endpoint", r.primevEndpoint, "primevToken", r.primevToken, "correlationID", correlationID.String())
 
 	payloadBytes, err := json.Marshal(msg)
 	if err != nil {
@@ -184,8 +186,10 @@ func (r *RemoteRelay) SubmitBlockPrimev(msg *capella.SubmitBlockRequest) error {
 	if err != nil {
 		return fmt.Errorf("could not prepare request: %w", err)
 	}
+
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Builder-Token", r.primevToken)
+	req.Header.Add("X-Correlation-ID", correlationID.String())
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
